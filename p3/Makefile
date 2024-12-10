@@ -1,42 +1,47 @@
-all: libLcd.a lcddemo.elf
+# Makefile for new project
 
+# CPU and Compiler Flags
 CPU             = msp430g2553
 CFLAGS          = -mmcu=${CPU} -Os -I../h
-LDFLAGS 	= -L/opt/ti/msp430_gcc/include -L../lib
-#switch the compiler (for the internal make rules)
+LDFLAGS         = -L../lib -L/opt/ti/msp430_gcc/include/
+
+# Compiler and Assembler
 CC              = msp430-elf-gcc
-AS              = msp430-elf-as
-AR              = msp430-elf-ar
+AS              = msp430-elf-gcc -mmcu=${CPU} -c
 
-libLcd.a: font-11x16.o font-5x7.o font-8x12.o lcdutils.o lcddraw.o
-	$(AR) crs $@ $^
+# Top-Level Targets
+all: watch.elf
 
-lcddraw.o: lcddraw.c lcddraw.h lcdutils.h
-lcdutils.o: lcdutils.c lcdutils.h
+# Rules
+watch.elf: watch.o stateMachine.o led.o wdt_handler.o p2_interrupt_handler.o switches.o buzzer.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ -lTimer -lLcd
 
-install: libLcd.a
-	mkdir -p ../h ../lib
-	mv $^ ../lib
-	cp *.h ../h
-
-clean:
-	rm -f libLcd.a *.o *.elf
-
-watch.elf: watch.o libLcd.a stateMachine.o led.o wd_interrupt_handler.o p2_interrupt_handler.o switches.o buzzer.o ../lib/libTimer.a
-
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ -lTimer
-
-load: lcddemo.elf
-	msp430loader.sh $^
-
-led.o: led.c led.h
+# Compile Object Files
+watch.o: watch.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 stateMachine.o: stateMachine.c stateMachine.h
+	$(CC) $(CFLAGS) -c $< -o $@
 
-buzzer.o: buzzer.c buzzer.h
+led.o: led.c led.h
+	$(CC) $(CFLAGS) -c $< -o $@
 
 switches.o: switches.c switches.h
+	$(CC) $(CFLAGS) -c $< -o $@
 
 wdt_handler.o: wdt_handler.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 p2_interrupt_handler.o: p2_interrupt_handler.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+buzzer.o: buzzer.c buzzer.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Load Program
+load: watch.elf
+	msp430loader.sh $^
+
+# Clean
+clean:
+	rm -f *.o *.elf
