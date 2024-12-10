@@ -1,20 +1,41 @@
-# makfile configuration
-CPU             	= msp430g2553
-CFLAGS          	= -mmcu=${CPU} -Os -I../h
-LDFLAGS		= -L../lib -L/opt/ti/msp430_gcc/include/ 
+all: libLcd.a lcddemo.elf
 
+CPU             = msp430g2553
+CFLAGS          = -mmcu=${CPU} -Os -I../h 
+LDFLAGS 	= -L/opt/ti/msp430_gcc/include -L../lib 
 #switch the compiler (for the internal make rules)
 CC              = msp430-elf-gcc
-AS              = msp430-elf-gcc -mmcu=${CPU} -c
+AS              = msp430-elf-as
+AR              = msp430-elf-ar
 
-all:wakedemo.elf
+libLcd.a: font-11x16.o font-5x7.o font-8x12.o lcdutils.o lcddraw.o
+	$(AR) crs $@ $^
 
-#additional rules for files
-wakedemo.elf: ${COMMON_OBJECTS} wakedemo.o wdt_handler.o
-	${CC} ${CFLAGS} ${LDFLAGS} -o $@ $^ -lTimer -lLcd 
+lcddraw.o: lcddraw.c lcddraw.h lcdutils.h
+lcdutils.o: lcdutils.c lcdutils.h
 
-load: wakedemo.elf
-	msp430loader.sh $^
+install: libLcd.a
+	mkdir -p ../h ../lib
+	mv $^ ../lib
+	cp *.h ../h
 
 clean:
-	rm -f *.o *.elf
+	rm -f libLcd.a *.o *.elf
+
+lcddemo.elf: lcddemo.o libLcd.a stateMachine.o led.o wd_interrupt_handler.o p2_interrupt_handler.o switches.o buzzer.o ../lib/libTimer.a
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ -lTimer 
+
+load: lcddemo.elf
+	msp430loader.sh $^
+
+led.o: led.c led.h
+
+stateMachine.o: stateMachine.c stateMachine.h
+
+buzzer.o: buzzer.c buzzer.h
+
+switches.o: switches.c switches.h
+
+wd_interrupt_handler.o: wd_interrupt_handler.c
+
+p2_interrupt_handler.o: p2_interrupt_handler.c
