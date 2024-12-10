@@ -15,16 +15,9 @@ main()
   u_char width = screenWidth, height = screenHeight;
 
   clearScreen(COLOR_BLACK);
-
-  int col=0, row=0;
-  int centerCol = width/2, centerRow = height/2;
-  for (row = 0; row < 20; row++){
-    for(col = -row; col <= (2*row); col+=2)
-      drawPixel(centerCol+ col, centerRow + row, COLOR_WHITE);
-  }
-  drawString11x16(20,20, "hello world", COLOR_WHITE, COLOR_BLACK);
-  //    drawString5x7(20,20, "hello world", COLOR_GREEN, COLOR_RED);
-
-  //  fillRectangle(30,30, 60, 60, COLOR_ORANGE);
-  
+  fillRectangle(0,0, 150, 10, COLOR_WHITE);
+  drawString5x7(5, 2, "Mode: ", COLOR_BLACK, COLOR_WHITE);
+  drawString5x7(100, 2, "Clock: ", COLOR_BLACK, COLOR_WHITE);
+  drawString11x16(40, 50, "12:00", COLOR_WHITE, COLOR_BLACK);
+  drawString8x12(102, 54, "am", COLOR_WHITE, COLOR_BLACK);
 }
