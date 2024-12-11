@@ -33,14 +33,28 @@ int main() {
 
   __enable_interrupt();      // Enable global interrupts
   while (1) {
-    if (switches & SW4) {          // Check if S4 is pressed
-      toggle_green_led();
-      u_int temp = fontColor;
-      fontColor = bgColor;       // Swap colors
-      bgColor = temp;
-      drawUI(fontColor, fontColor); // Redraw UI with new colors
-      toggle_red_led();          // Debug: Toggle Red LED
-      switches &= ~SW4;          // Clear the S4 bit to acknowledge the press
+    if (switches & SW1) {  // S1: Green LED on
+      turn_on_green_led();
+      switches &= ~SW1; // Clear S1 bit
+    }
+    if (switches & SW2) {  // S2: Red LED on
+      turn_on_red_led();
+      switches &= ~SW2; // Clear S2 bit
+    }
+    if (switches & SW3) {  // S3: Both LEDs on
+      turn_on_green_led();
+      turn_on_red_led();
+      switches &= ~SW3; // Clear S3 bit
+    }
+    if (switches & SW4) {  // S4: Both LEDs off
+      turn_off_green_led();
+      turn_off_red_led();
+      u_int temp = bgColor;
+      bgColor = fontColor;
+      fontColor = temp;
+      drawUI(fontColor, bgColor);
+      __delay_cycles(5000);  
+      switches &= ~SW4; // Clear S4 bit
     }
   }
   return 0;
