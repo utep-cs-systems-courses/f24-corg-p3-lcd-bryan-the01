@@ -9,17 +9,69 @@
 
 u_int fontColor = COLOR_WHITE; // Default font color
 u_int bgColor = COLOR_BLACK;    // Default background color
+char daytimeToggle = 0;       // 0 for "Night", 1 for "Day"
+unsigned int h1 = 1, h2 = 2; // Hour digits 1 and 2 (HH:MM:SS format)
+unsigned int m1 = 0, m2 = 0; // Minute digits
+unsigned int s1 = 0, s2 = 0; // Second digits
 
 void drawUI(u_int fontColor, u_int bgColor) {
+  //Clear screen and create graphical UI
   clearScreen(bgColor);
-  // Fill a rectangle with the font color
   fillRectangle(0, 0, 150, 10, fontColor);
-
-  // Draw static text elements (e.g., a mode label or title)
   drawString5x7(5, 2, "Mode: ", bgColor, fontColor);
+  if (daytimeToggle) {
+    drawString5x7(100, 2, "  Day", bgColor, fontColor);
+  } else {
+    drawString5x7(100, 2, "Night", bgColor, fontColor);
+  }
 
-  // Additional UI elements can be added here
-  drawString11x16(30, 50, "12:00:00", fontColor, bgColor);
+  // Display each digit in its respective place
+  drawChar11x16(24, 50, '0' + h1, fontColor, bgColor); // Hour tens place
+  drawChar11x16(36, 50, '0' + h2, fontColor, bgColor); // Hour ones place
+  drawChar11x16(48, 50, ':', fontColor, bgColor);      // Separator
+  drawChar11x16(60, 50, '0' + m1, fontColor, bgColor); // Minute tens place
+  drawChar11x16(72, 50, '0' + m2, fontColor, bgColor); // Minute ones place
+  drawChar11x16(84, 50, ':', fontColor, bgColor);     // Separator
+  drawChar11x16(96, 50, '0' + s1, fontColor, bgColor);// Second tens place
+  drawChar11x16(108, 50, '0' + s2, fontColor, bgColor);// Second ones place
+}
+
+void daytime_toggle() {
+  if (daytimeToggle) {
+    daytimeToggle = 0; // Switch to "Night"
+    drawString5x7(100, 2, "Night", bgColor, fontColor);
+  } else {
+    daytimeToggle = 1; // Switch to "Day"
+    drawString5x7(100, 2, "  Day", bgColor, fontColor);
+  }
+}
+
+void increment_time() {
+  // Increment seconds
+  s2++;
+  if (s2 == 10) {
+    s2 = 0;
+    s1++;
+  }
+  if (s1 == 6) { // 60 seconds
+    s1 = 0;
+    m2++;
+  }
+  // Increment minutes
+  if (m2 == 10) {
+    m2 = 0;
+    m1++;
+  }
+  if (m1 == 6) { // 60 minutes
+    m1 = 0;
+    h2++;
+  }
+
+  // Increment hours
+  if ((h1 == 1 && h2 == 3) || (h1 == 0 && h2 == 10)) { // Handle 12-hour format
+    h1 = (h1 == 1) ? 0 : 1;
+    h2 = (h1 == 0) ? 1 : 0;
+  }
 }
 
 int main() {
@@ -30,7 +82,7 @@ int main() {
   switch_init();             // Initialize switches
   init_leds();
   drawUI(fontColor, bgColor); // Draw initial UI
-
+  enableWDTInterrupts();
   __enable_interrupt();      // Enable global interrupts
   while (1) {
     if (switches & SW1) {  // S1: Green LED on
@@ -53,8 +105,13 @@ int main() {
       bgColor = fontColor;
       fontColor = temp;
       drawUI(fontColor, bgColor);
+      daytime_toggle();
       __delay_cycles(5000);  
       switches &= ~SW4; // Clear S4 bit
+    }
+    if (redrawScreen) {
+      redrawScreen = 0; // Clear the flag
+      drawUI(fontColor, bgColor); // Redraw the UI
     }
   }
   return 0;
