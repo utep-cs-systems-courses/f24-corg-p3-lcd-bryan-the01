@@ -36,6 +36,21 @@ void drawUI(u_int fontColor, u_int bgColor) {
   drawChar11x16(108, 50, '0' + s2, fontColor, bgColor);// Second ones place
 }
 
+void updateTime(u_int fontColor, u_int bgColor) {
+  // Clear the area where the time is displayed
+  //  fillRectangle(24, 50, 120, 16, bgColor);
+
+  // Redraw each digit in its respective place
+  drawChar11x16(24, 50, '0' + h1, fontColor, bgColor); // Hour tens place
+  drawChar11x16(36, 50, '0' + h2, fontColor, bgColor); // Hour ones place
+  drawChar11x16(48, 50, ':', fontColor, bgColor);      // Separator
+  drawChar11x16(60, 50, '0' + m1, fontColor, bgColor); // Minute tens place
+  drawChar11x16(72, 50, '0' + m2, fontColor, bgColor); // Minute ones place
+  drawChar11x16(84, 50, ':', fontColor, bgColor);      // Separator
+  drawChar11x16(96, 50, '0' + s1, fontColor, bgColor);// Second tens place
+  drawChar11x16(108, 50, '0' + s2, fontColor, bgColor);// Second ones place
+}
+
 void daytime_toggle() {
   if (daytimeToggle) {
     daytimeToggle = 0; // Switch to "Night"
@@ -85,6 +100,12 @@ int main() {
   enableWDTInterrupts();
   __enable_interrupt();      // Enable global interrupts
   while (1) {
+    // Prioritize time redraw
+    if (redrawScreen) {
+      redrawScreen = 0; // Clear the flag
+      updateTime(fontColor, bgColor); // Redraw only the time
+    }
+    
     if (switches & SW1) {  // S1: Green LED on
       turn_on_green_led();
       switches &= ~SW1; // Clear S1 bit
@@ -106,13 +127,11 @@ int main() {
       fontColor = temp;
       drawUI(fontColor, bgColor);
       daytime_toggle();
-      __delay_cycles(5000);  
+      //      __delay_cycles(5000);  
       switches &= ~SW4; // Clear S4 bit
     }
-    if (redrawScreen) {
-      redrawScreen = 0; // Clear the flag
-      drawUI(fontColor, bgColor); // Redraw the UI
-    }
+    __bis_SR_register(LPM0_bits + GIE); // Enter low-power mode with interrupts enabled
+    
   }
   return 0;
 }
