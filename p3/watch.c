@@ -6,6 +6,7 @@
 #include "p2_interrupt_handler.h"
 #include "switches.h"
 #include "../timerLib/clocksTimer.h"
+#include "buzzer.h"
 
 u_int fontColor = COLOR_WHITE; // Default font color
 u_int bgColor = COLOR_BLACK;    // Default background color
@@ -36,6 +37,18 @@ void drawUI(u_int fontColor, u_int bgColor) {
   drawChar11x16(108, 50, '0' + s2, fontColor, bgColor);// Second ones place
 }
 
+void modeBuzz(){
+  static char alarmCount = 0;
+  static char alarmToggle = 0;
+  if (++alarmCount == 25) {
+    if (alarmToggle)
+      buzzer_set_period(700);
+    else
+      buzzer_set_period(500);
+    alarmToggle = !alarmToggle;
+    alarmCount = 0;
+  }
+}
 
 void updateTime(u_int fontColor, u_int bgColor) {
   // Clear the area where the time is displayed
@@ -108,8 +121,7 @@ int main() {
     }
     if (switches & SW1) {  // S1: Green LED on
       turn_on_green_led();
-      redrawScreen = 1;
-      drawString8x12(5, 120, "S1 pressed", fontColor, bgColor);
+      drawString8x12(5, 120, "S1 pressed", fontColor, bgColor); // Update button status
       switches &= ~SW1; // Clear S1 bit
     }
     if (switches & SW2) {  // S2: Red LED on
@@ -122,8 +134,7 @@ int main() {
     if (switches & SW3) {  // S3: Both LEDs on
       turn_on_green_led();
       turn_on_red_led();
-      drawString8x12(5, 120, "S3 pressed", fontColor, bgColor);
-      redrawScreen = 1;
+      drawString8x12(5, 120, "S3 pressed", fontColor, bgColor); // Update button status
       switches &= ~SW3; // Clear S3 bit
     }
     if (switches & SW4) {  // S4: Both LEDs off
@@ -136,8 +147,10 @@ int main() {
       drawUI(fontColor, bgColor);
       daytime_toggle();
       drawString8x12(5, 120, "S4 pressed", fontColor, bgColor);
-      redrawScreen = 1;
-      //      __delay_cycles(5000);  
+      // Beep briefly
+      buzzer_set_period(1000); // Set buzzer frequency (e.g., 1 kHz)
+      __delay_cycles(250000); // Short delay (~250ms at 1 MHz clock)
+      buzzer_off();           // Turn off the buzzer
       switches &= ~SW4; // Clear S4 bit
     }
     __bis_SR_register(LPM0_bits + GIE); // Enter low-power mode with interrupts enabled

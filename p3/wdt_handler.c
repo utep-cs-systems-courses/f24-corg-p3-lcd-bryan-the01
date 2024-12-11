@@ -16,8 +16,6 @@ void __attribute__((interrupt(WDT_VECTOR))) wdt_c_handler() {
     redrawScreen = 1; // Set flag to redraw the screen
     secCount = 0;
   }
-
-  if (redrawScreen) {
-    __bic_SR_register_on_exit(CPUOFF); // Clear CPUOFF bit to wake up CPU
-  }
+  // Ensure CPU wakes up after interrupt
+  __bic_SR_register_on_exit(CPUOFF); 
 }
