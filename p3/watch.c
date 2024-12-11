@@ -108,11 +108,14 @@ int main() {
     }
     if (switches & SW1) {  // S1: Green LED on
       turn_on_green_led();
+      redrawScreen = 1;
       drawString8x12(5, 120, "S1 pressed", fontColor, bgColor);
       switches &= ~SW1; // Clear S1 bit
     }
     if (switches & SW2) {  // S2: Red LED on
+      redrawScreen = 1;
       turn_on_red_led();
+      redrawScreen = 1;
       drawString8x12(5, 120, "S2 pressed", fontColor, bgColor);
       switches &= ~SW2; // Clear S2 bit
     }
@@ -120,6 +123,7 @@ int main() {
       turn_on_green_led();
       turn_on_red_led();
       drawString8x12(5, 120, "S3 pressed", fontColor, bgColor);
+      redrawScreen = 1;
       switches &= ~SW3; // Clear S3 bit
     }
     if (switches & SW4) {  // S4: Both LEDs off
@@ -132,6 +136,7 @@ int main() {
       drawUI(fontColor, bgColor);
       daytime_toggle();
       drawString8x12(5, 120, "S4 pressed", fontColor, bgColor);
+      redrawScreen = 1;
       //      __delay_cycles(5000);  
       switches &= ~SW4; // Clear S4 bit
     }
