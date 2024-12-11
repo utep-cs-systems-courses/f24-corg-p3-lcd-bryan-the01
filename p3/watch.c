@@ -36,6 +36,7 @@ void drawUI(u_int fontColor, u_int bgColor) {
   drawChar11x16(108, 50, '0' + s2, fontColor, bgColor);// Second ones place
 }
 
+
 void updateTime(u_int fontColor, u_int bgColor) {
   // Clear the area where the time is displayed
   //  fillRectangle(24, 50, 120, 16, bgColor);
@@ -105,28 +106,32 @@ int main() {
       redrawScreen = 0; // Clear the flag
       updateTime(fontColor, bgColor); // Redraw only the time
     }
-    
     if (switches & SW1) {  // S1: Green LED on
       turn_on_green_led();
+      drawString8x12(5, 120, "S1 pressed", fontColor, bgColor);
       switches &= ~SW1; // Clear S1 bit
     }
     if (switches & SW2) {  // S2: Red LED on
       turn_on_red_led();
+      drawString8x12(5, 120, "S2 pressed", fontColor, bgColor);
       switches &= ~SW2; // Clear S2 bit
     }
     if (switches & SW3) {  // S3: Both LEDs on
       turn_on_green_led();
       turn_on_red_led();
+      drawString8x12(5, 120, "S3 pressed", fontColor, bgColor);
       switches &= ~SW3; // Clear S3 bit
     }
     if (switches & SW4) {  // S4: Both LEDs off
       turn_off_green_led();
       turn_off_red_led();
+      //      drawString8x12(5,120, "S4", fontColor, bgColor);
       u_int temp = bgColor;
       bgColor = fontColor;
       fontColor = temp;
       drawUI(fontColor, bgColor);
       daytime_toggle();
+      drawString8x12(5, 120, "S4 pressed", fontColor, bgColor);
       //      __delay_cycles(5000);  
       switches &= ~SW4; // Clear S4 bit
     }
