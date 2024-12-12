@@ -8,23 +8,27 @@
 #include "../timerLib/clocksTimer.h"
 #include "buzzer.h"
 
-u_int fontColor = COLOR_WHITE; // Default font color
-u_int bgColor = COLOR_BLACK;    // Default background color
-char daytimeToggle = 0;       // 0 for "Night", 1 for "Day"
-unsigned int h1 = 1, h2 = 2; // Hour digits 1 and 2 (HH:MM:SS format)
-unsigned int m1 = 0, m2 = 0; // Minute digits
-unsigned int s1 = 0, s2 = 0; // Second digits
+u_int fontColor = COLOR_WHITE;    // Default font color
+u_int bgColor = COLOR_BLACK;      // Default background color
+char daytimeToggle = 0;           // 0 for "Night", 1 for "Day"
+unsigned int h1 = 1, h2 = 2;      // Hour digits 1 and 2 (HH:MM:SS format)
+unsigned int m1 = 0, m2 = 0;      // Minute digits
+unsigned int s1 = 0, s2 = 0;      // Second digits
+char currentMode = 0;             // 0 for Display mode, 1 for Edit mode
 
 void drawUI(u_int fontColor, u_int bgColor) {
   //Clear screen and create graphical UI
   clearScreen(bgColor);
   fillRectangle(0, 0, 150, 10, fontColor);
   drawString5x7(5, 2, "Mode: ", bgColor, fontColor);
-  if (daytimeToggle) {
+  if(daytimeToggle)
     drawString5x7(100, 2, "  Day", bgColor, fontColor);
-  } else {
+  else
     drawString5x7(100, 2, "Night", bgColor, fontColor);
-  }
+  if(currentMode)
+    drawString5x7(37, 2, " Edit   ", bgColor, fontColor);
+  else
+    drawString5x7(37, 2, " Display", bgColor, fontColor);
 
   // Display each digit in its respective place
   drawChar11x16(24, 50, '0' + h1, fontColor, bgColor); // Hour tens place
@@ -76,30 +80,38 @@ void daytime_toggle() {
 }
 
 void increment_time() {
-  // Increment seconds
-  s2++;
+  if (currentMode == 1) return; // Edit mode needs no update
+  s2++;                         // Seconds increment
   if (s2 == 10) {
     s2 = 0;
     s1++;
   }
-  if (s1 == 6) { // 60 seconds
+  if (s1 == 6) {
     s1 = 0;
     m2++;
   }
-  // Increment minutes
-  if (m2 == 10) {
+  if (m2 == 10) {               // Minutes increment
     m2 = 0;
     m1++;
   }
-  if (m1 == 6) { // 60 minutes
+  if (m1 == 6) {
     m1 = 0;
     h2++;
   }
-
-  // Increment hours
-  if ((h1 == 1 && h2 == 3) || (h1 == 0 && h2 == 10)) { // Handle 12-hour format
+  // Hours increment 12-hour format
+  if ((h1 == 1 && h2 == 3) || (h1 == 0 && h2 == 10)) {
     h1 = (h1 == 1) ? 0 : 1;
     h2 = (h1 == 0) ? 1 : 0;
+  }
+}
+
+// Toggles between edit and display mode
+void toggleMode() {
+  currentMode = !currentMode;
+  if (currentMode) {
+    drawString5x7(37, 2, " Edit   ", bgColor, fontColor);
+  } else {
+    drawString5x7(37, 2, " Display", bgColor, fontColor);
   }
 }
 
@@ -109,6 +121,7 @@ int main() {
   configureClocks();
   lcd_init();
   switch_init();             // Initialize switches
+  buzzer_init();
   init_leds();
   drawUI(fontColor, bgColor); // Draw initial UI
   enableWDTInterrupts();
@@ -120,36 +133,46 @@ int main() {
       updateTime(fontColor, bgColor); // Redraw only the time
     }
     if (switches & SW1) {  // S1: Green LED on
-      turn_on_green_led();
+      toggleMode();
+      // turn_on_green_led();
+      buzzer_set_period(1450);
+      __delay_cycles(250000);
+      buzzer_off();
       drawString8x12(5, 120, "S1 pressed", fontColor, bgColor); // Update button status
       switches &= ~SW1; // Clear S1 bit
     }
     if (switches & SW2) {  // S2: Red LED on
-      redrawScreen = 1;
-      turn_on_red_led();
-      redrawScreen = 1;
+      //      turn_on_red_led();
+      // Beep briefly
+      buzzer_set_period(1300);
+      __delay_cycles(250000);
+      buzzer_off();
       drawString8x12(5, 120, "S2 pressed", fontColor, bgColor);
       switches &= ~SW2; // Clear S2 bit
     }
     if (switches & SW3) {  // S3: Both LEDs on
-      turn_on_green_led();
-      turn_on_red_led();
+      //turn_on_green_led();
+      // turn_on_red_led();
+      buzzer_set_period(1150);
+      __delay_cycles(250000);
+      buzzer_off();
       drawString8x12(5, 120, "S3 pressed", fontColor, bgColor); // Update button status
       switches &= ~SW3; // Clear S3 bit
     }
     if (switches & SW4) {  // S4: Both LEDs off
-      turn_off_green_led();
-      turn_off_red_led();
+      //turn_off_green_led();
+      //turn_off_red_led();
       //      drawString8x12(5,120, "S4", fontColor, bgColor);
       u_int temp = bgColor;
       bgColor = fontColor;
       fontColor = temp;
+      buzzer_set_period(1000);
+      __delay_cycles(250000);
+      buzzer_off();
       drawUI(fontColor, bgColor);
       daytime_toggle();
       drawString8x12(5, 120, "S4 pressed", fontColor, bgColor);
-      // Beep briefly
-      buzzer_set_period(1000); // Set buzzer frequency (e.g., 1 kHz)
-      __delay_cycles(250000); // Short delay (~250ms at 1 MHz clock)
+      //      __delay_cycles(250000); // Short delay (~250ms at 1 MHz clock)
       buzzer_off();           // Turn off the buzzer
       switches &= ~SW4; // Clear S4 bit
     }
