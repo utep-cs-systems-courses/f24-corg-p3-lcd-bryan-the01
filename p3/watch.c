@@ -116,15 +116,18 @@ void increment_time() {
 void toggleMode() {
   editDigit = 0;
   currentMode = !currentMode;
-  if (currentMode) {
+  if (currentMode) 
     drawString5x7(37, 2, " Edit   ", bgColor, fontColor);
-  } else {
+  else {
     drawString5x7(37, 2, " Display", bgColor, fontColor);
+    blinkFlag = 0; // Stop blinking when leaving Edit mode
+    redrawScreen = 1; // Force a screen redraw to refresh the time display
   }
 }
-void blinkCurrentDigit() {
+
+void blinkDigit() {
   if (currentMode == 1) { // Only blink in Edit mode
-    if (blinkFlag) { // Toggle visibility
+    if (blinkFlag) { // Hide the current digit
       switch (editDigit) {
       case 0: drawChar11x16(24, 50, ' ', fontColor, bgColor); break; // Clear h1
       case 1: drawChar11x16(36, 50, ' ', fontColor, bgColor); break; // Clear h2
@@ -144,6 +147,11 @@ void blinkCurrentDigit() {
       }
     }
   }
+}
+
+void changeBlinkDigit() {
+  editDigit = (editDigit + 1) % 6; // Cycle through 0 to 5
+  redrawScreen = 1; // Trigger a redraw
 }
 
 void incrementEditDigit() {
@@ -169,6 +177,7 @@ void incrementEditDigit() {
   }
   redrawScreen = 1;
 }
+
 
 int main() {
   WDTCTL = WDTPW | WDTHOLD;  // Stop watchdog timer
@@ -202,10 +211,8 @@ int main() {
       buzzer_set_period(1300);
       __delay_cycles(250000);
       buzzer_off();
-      if (currentMode == 1) { // Only active in Edit mode
-	editDigit = (editDigit + 1) % 6;
-	redrawScreen = 1;
-      }
+      if (currentMode == 1)
+	changeBlinkDigit();
       drawString8x12(5, 120, "S2 pressed", fontColor, bgColor);
       switches &= ~SW2; // Clear S2 bit
     }
