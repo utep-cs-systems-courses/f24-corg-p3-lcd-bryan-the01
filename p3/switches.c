@@ -2,15 +2,12 @@
 #include "switches.h"
 #include "led.h"
 
-int switches = 0; // Global bitfield for switch states
+int switches = 0; // Bitfield for switch states
 
 static char switch_update_interrupt_sense() {
   char p2val = P2IN;
-
-  // Configure interrupts to detect changes
-  P2IES |= (p2val & SWITCHES);   // Sense high-to-low transition
+  P2IES |= (p2val & SWITCHES);   // Sense high-to-low transitio
   P2IES &= (p2val | ~SWITCHES);  // Sense low-to-high transition
-
   return p2val;
 }
 

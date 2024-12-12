@@ -2,31 +2,33 @@
 #include "lcdutils.h"
 #include "stateMachine.h"
 
-volatile short redrawScreen = 0;
-extern void increment_time();
-extern char currentMode;         // 0: Display Mode, 1: Edit Mode
+volatile short redrawScreen = 0; // Variable to determine if screen needs
+                                 // be redrawn
+
+extern void increment_time();    // Method to increment displayed time
+extern char currentMode;         // 0 is Display mode, 1 is Edit mode
 extern char blinkFlag;           // Flag to toggle blinking in Edit Mode
-extern void blinkDigit();
+extern void blinkDigit();        // Method to blink current edit digit
+                                 // only if blinkFlag is 1
 
 // Watchdog Timer interrupt handler
 void __attribute__((interrupt(WDT_VECTOR))) wdt_c_handler() {
   static int secCount = 0;
 
   secCount++;
-  // Handle Display Mode time increment
-  if (secCount == 250) { // Update every second
-    if (currentMode == 0) { // Only increment time in Display mode
+  // Display mode
+  if (secCount == 250) {      // Update every second(ish)
+    if (currentMode == 0)     // Only increment time in Display mode
       increment_time();
-    }
-    redrawScreen = 1; // Always update the screen if needed
-    secCount = 0;
+    redrawScreen = 1;         // Always redraw screen to reflect time change
+    secCount = 0;             // Reset sec count
   }
 
-  // Handle Edit Mode blinking
-  if (currentMode == 1 && secCount % 50 == 0) { // Edit mode: blink digit
-    blinkFlag = !blinkFlag;
-    blinkDigit();
+  // Edit mode
+  if (currentMode == 1 && secCount % 50 == 0) { // Every 50 secCount 
+    blinkFlag = !blinkFlag;                     // Toggle blink flag
+    blinkDigit();                               // Blink current digit if flag is 1
   }
-  // Ensure CPU wakes up after interrupt
+  
   __bic_SR_register_on_exit(CPUOFF); 
 }

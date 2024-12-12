@@ -8,18 +8,18 @@
 #include "../timerLib/clocksTimer.h"
 #include "buzzer.h"
 
-u_int fontColor = COLOR_WHITE;    // Default font color
-u_int bgColor = COLOR_BLACK;      // Default background color
-char daytimeToggle = 0;           // 0 for "Night", 1 for "Day"
-unsigned int h1 = 1, h2 = 2;      // Hour digits 1 and 2 (HH:MM:SS format)
+u_int fontColor = COLOR_WHITE;    // Font color
+u_int bgColor = COLOR_BLACK;      // Background color
+char daytimeToggle = 0;           // 0 for night mode, 1 for Day mode
+unsigned int h1 = 1, h2 = 2;      // Hour digits (HH:MM:SS format)
 unsigned int m1 = 0, m2 = 0;      // Minute digits
 unsigned int s1 = 0, s2 = 0;      // Second digits
 char currentMode = 0;             // 0 for Display mode, 1 for Edit mode
 char blinkFlag = 0;               // Blink flag for current edit digit
-char editDigit = 0;               // 0 for h1, 1 for h2, ..., 5 for s2
+char editDigit = 0;               // 0 for h1, 1 for h2,..etc
 
+// Method to draw user interface
 void drawUI(u_int fontColor, u_int bgColor) {
-  //Clear screen and create graphical UI
   clearScreen(bgColor);
   fillRectangle(0, 0, 150, 10, fontColor);
   drawString5x7(5, 2, "Mode: ", bgColor, fontColor);
@@ -32,14 +32,14 @@ void drawUI(u_int fontColor, u_int bgColor) {
   else
     drawString5x7(37, 2, " Display", bgColor, fontColor);
 
-  // Display each digit in its respective place
+  // Display each digit in its place
   drawChar11x16(24, 50, '0' + h1, fontColor, bgColor); // Hour tens place
   drawChar11x16(36, 50, '0' + h2, fontColor, bgColor); // Hour ones place
   drawChar11x16(48, 50, ':', fontColor, bgColor);      // Separator
   drawChar11x16(60, 50, '0' + m1, fontColor, bgColor); // Minute tens place
   drawChar11x16(72, 50, '0' + m2, fontColor, bgColor); // Minute ones place
-  drawChar11x16(84, 50, ':', fontColor, bgColor);     // Separator
-  drawChar11x16(96, 50, '0' + s1, fontColor, bgColor);// Second tens place
+  drawChar11x16(84, 50, ':', fontColor, bgColor);      // Separator
+  drawChar11x16(96, 50, '0' + s1, fontColor, bgColor); // Second tens place
   drawChar11x16(108, 50, '0' + s2, fontColor, bgColor);// Second ones place
 }
 
@@ -57,16 +57,10 @@ void modeBuzz(){
 }
 
 void updateTime(u_int fontColor, u_int bgColor) {
-  if (currentMode == 1 && !blinkFlag) {
-    // Hide h1 by drawing it in the background color
-    drawChar11x16(24, 50, ' ', bgColor, bgColor);
-  } else {
-    // Draw h1 normally
-    drawChar11x16(24, 50, '0' + h1, fontColor, bgColor);
+  if (currentMode == 1) {
+    return;
   }
-
-  // Redraw each digit in its respective place
-  // drawChar11x16(24, 50, '0' + h1, fontColor, bgColor); // Hour tens place
+  drawChar11x16(24, 50, '0' + h1, fontColor, bgColor); // Hour tens place
   drawChar11x16(36, 50, '0' + h2, fontColor, bgColor); // Hour ones place
   drawChar11x16(48, 50, ':', fontColor, bgColor);      // Separator
   drawChar11x16(60, 50, '0' + m1, fontColor, bgColor); // Minute tens place
@@ -150,6 +144,14 @@ void blinkDigit() {
 }
 
 void changeBlinkDigit() {
+  switch (editDigit) {
+  case 0: drawChar11x16(24, 50, '0' + h1, fontColor, bgColor); break;
+  case 1: drawChar11x16(36, 50, '0' + h2, fontColor, bgColor); break;
+  case 2: drawChar11x16(60, 50, '0' + m1, fontColor, bgColor); break;
+  case 3: drawChar11x16(72, 50, '0' + m2, fontColor, bgColor); break;
+  case 4: drawChar11x16(96, 50, '0' + s1, fontColor, bgColor); break;
+  case 5: drawChar11x16(108, 50, '0' + s2, fontColor, bgColor); break;
+  }
   editDigit = (editDigit + 1) % 6; // Cycle through 0 to 5
   redrawScreen = 1; // Trigger a redraw
 }
