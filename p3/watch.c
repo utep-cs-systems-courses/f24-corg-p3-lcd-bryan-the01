@@ -16,6 +16,7 @@ unsigned int m1 = 0, m2 = 0;      // Minute digits
 unsigned int s1 = 0, s2 = 0;      // Second digits
 char currentMode = 0;             // 0 for Display mode, 1 for Edit mode
 char blinkFlag = 0;               // Blink flag for current edit digit
+char editDigit = 0;               // 0 for h1, 1 for h2, ..., 5 for s2
 
 void drawUI(u_int fontColor, u_int bgColor) {
   //Clear screen and create graphical UI
@@ -113,12 +114,60 @@ void increment_time() {
 
 // Toggles between edit and display mode
 void toggleMode() {
+  editDigit = 0;
   currentMode = !currentMode;
   if (currentMode) {
     drawString5x7(37, 2, " Edit   ", bgColor, fontColor);
   } else {
     drawString5x7(37, 2, " Display", bgColor, fontColor);
   }
+}
+void blinkCurrentDigit() {
+  if (currentMode == 1) { // Only blink in Edit mode
+    if (blinkFlag) { // Toggle visibility
+      switch (editDigit) {
+      case 0: drawChar11x16(24, 50, ' ', fontColor, bgColor); break; // Clear h1
+      case 1: drawChar11x16(36, 50, ' ', fontColor, bgColor); break; // Clear h2
+      case 2: drawChar11x16(60, 50, ' ', fontColor, bgColor); break; // Clear m1
+      case 3: drawChar11x16(72, 50, ' ', fontColor, bgColor); break; // Clear m2
+      case 4: drawChar11x16(96, 50, ' ', fontColor, bgColor); break; // Clear s1
+      case 5: drawChar11x16(108, 50, ' ', fontColor, bgColor); break; // Clear s2
+      }
+    } else { // Redraw the digit
+      switch (editDigit) {
+      case 0: drawChar11x16(24, 50, '0' + h1, fontColor, bgColor); break;
+      case 1: drawChar11x16(36, 50, '0' + h2, fontColor, bgColor); break;
+      case 2: drawChar11x16(60, 50, '0' + m1, fontColor, bgColor); break;
+      case 3: drawChar11x16(72, 50, '0' + m2, fontColor, bgColor); break;
+      case 4: drawChar11x16(96, 50, '0' + s1, fontColor, bgColor); break;
+      case 5: drawChar11x16(108, 50, '0' + s2, fontColor, bgColor); break;
+      }
+    }
+  }
+}
+
+void incrementEditDigit() {
+  switch (editDigit) {
+  case 0: // h1 (tens place of hours)
+    h1 = (h1 == 1) ? 0 : h1 + 1; // Wrap between 0 and 1
+    break;
+  case 1: // h2 (ones place of hours)
+    h2 = (h1 == 1 && h2 == 2) ? 0 : h2 + 1; // Wrap at 12
+    break;
+  case 2: // m1 (tens place of minutes)
+    m1 = (m1 == 5) ? 0 : m1 + 1; // Wrap at 5
+    break;
+  case 3: // m2 (ones place of minutes)
+    m2 = (m2 == 9) ? 0 : m2 + 1; // Wrap at 9
+    break;
+  case 4: // s1 (tens place of seconds)
+    s1 = (s1 == 5) ? 0 : s1 + 1; // Wrap at 5
+    break;
+  case 5: // s2 (ones place of seconds)
+    s2 = (s2 == 9) ? 0 : s2 + 1; // Wrap at 9
+    break;
+  }
+  redrawScreen = 1;
 }
 
 int main() {
@@ -153,6 +202,10 @@ int main() {
       buzzer_set_period(1300);
       __delay_cycles(250000);
       buzzer_off();
+      if (currentMode == 1) { // Only active in Edit mode
+	editDigit = (editDigit + 1) % 6;
+	redrawScreen = 1;
+      }
       drawString8x12(5, 120, "S2 pressed", fontColor, bgColor);
       switches &= ~SW2; // Clear S2 bit
     }
@@ -162,6 +215,20 @@ int main() {
       buzzer_set_period(1150);
       __delay_cycles(250000);
       buzzer_off();
+      if (currentMode == 1) { // Only active in Edit mode
+	switch (editDigit) {
+	case 0: h1 = (h1 + 1) % 2; break; // Toggle between 0-1
+	case 1:
+	  h2 = (h2 + 1) % 10;
+	  if (h1 == 1 && h2 > 2) h2 = 0; // Limit hours to 12
+	  break;
+	case 2: m1 = (m1 + 1) % 6; break; // 0-5 for minutes tens
+	case 3: m2 = (m2 + 1) % 10; break; // 0-9 for minutes ones
+	case 4: s1 = (s1 + 1) % 6; break; // 0-5 for seconds tens
+	case 5: s2 = (s2 + 1) % 10; break; // 0-9 for seconds ones
+	}
+	redrawScreen = 1; // Update the display
+      }
       drawString8x12(5, 120, "S3 pressed", fontColor, bgColor); // Update button status
       switches &= ~SW3; // Clear S3 bit
     }
