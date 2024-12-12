@@ -7,6 +7,9 @@ LDFLAGS         = -L../lib -L/opt/ti/msp430_gcc/include/
 CC              = msp430-elf-gcc
 AS              = msp430-elf-gcc -mmcu=${CPU} -c
 
+# Wdt selection
+USE_ASM_WDT     ?= 0   # Set to 1 assembly, set 0 for c
+
 # Make all
 all: watch.elf
 watch.elf: watch.o stateMachine.o led.o wdt_handler.o p2_interrupt_handler.o switches.o buzzer.o ../lcdLib/lcdutils.o ../lcdLib/lcddraw.o ../timerLib/clocksTimer.o
@@ -20,8 +23,6 @@ stateMachine.o: stateMachine.c stateMachine.h
 led.o: led.c led.h
 	$(CC) $(CFLAGS) -c $< -o $@
 switches.o: switches.c switches.h
-	$(CC) $(CFLAGS) -c $< -o $@
-wdt_handler.o: wdt_handler.c
 	$(CC) $(CFLAGS) -c $< -o $@
 p2_interrupt_handler.o: p2_interrupt_handler.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -37,6 +38,15 @@ buzzer.o: buzzer.c buzzer.h
 # File in timerLib
 ../timerLib/clocksTimer.o: ../timerLib/clocksTimer.c ../timerLib/clocksTimer.h
 	$(CC) $(CFLAGS) -c $< -o $@
+
+# Conditional wdt_handler
+ifeq ($(USE_ASM_WDT), 1)
+wdt_handler.o: wdt_handler.s
+	$(AS) $< -o $@
+else
+wdt_handler.o: wdt_handler.c
+	$(CC) $(CFLAGS) -c $< -o $@
+endif
 
 # Load and Clean
 load: watch.elf

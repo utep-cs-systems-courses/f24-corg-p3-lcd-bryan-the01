@@ -43,21 +43,10 @@ void drawUI(u_int fontColor, u_int bgColor) {
   drawChar11x16(108, 50, '0' + s2, fontColor, bgColor);// Second ones place
 }
 
-void modeBuzz(){
-  static char alarmCount = 0;
-  static char alarmToggle = 0;
-  if (++alarmCount == 25) {
-    if (alarmToggle)
-      buzzer_set_period(700);
-    else
-      buzzer_set_period(500);
-    alarmToggle = !alarmToggle;
-    alarmCount = 0;
-  }
-}
-
+// Updates graphical display of time only, actual 
+// time variable increased in incerement_time(function)
 void updateTime(u_int fontColor, u_int bgColor) {
-  if (currentMode == 1) {
+  if (currentMode == 1) {   // if in Edit mode, returns without updating time
     return;
   }
   drawChar11x16(24, 50, '0' + h1, fontColor, bgColor); // Hour tens place
@@ -66,40 +55,44 @@ void updateTime(u_int fontColor, u_int bgColor) {
   drawChar11x16(60, 50, '0' + m1, fontColor, bgColor); // Minute tens place
   drawChar11x16(72, 50, '0' + m2, fontColor, bgColor); // Minute ones place
   drawChar11x16(84, 50, ':', fontColor, bgColor);      // Separator
-  drawChar11x16(96, 50, '0' + s1, fontColor, bgColor);// Second tens place
+  drawChar11x16(96, 50, '0' + s1, fontColor, bgColor); // Second tens place
   drawChar11x16(108, 50, '0' + s2, fontColor, bgColor);// Second ones place
 }
 
+// Toggles day/night mode, writes mode on top left
+// color inversion done in SW4
 void daytime_toggle() {
   if (daytimeToggle) {
-    daytimeToggle = 0; // Switch to "Night"
+    daytimeToggle = 0; // Switch to Night mode
     drawString5x7(100, 2, "Night", bgColor, fontColor);
   } else {
-    daytimeToggle = 1; // Switch to "Day"
+    daytimeToggle = 1; // Switch to Day mode
     drawString5x7(100, 2, "  Day", bgColor, fontColor);
   }
 }
 
+// Increments time in 
 void increment_time() {
   if (currentMode == 1) return; // Edit mode needs no update
-  s2++;                         // Seconds increment
+  
+  // Seconds increment
+  s2++;
   if (s2 == 10) {
     s2 = 0;
-    s1++;
-  }
+    s1++;}
   if (s1 == 6) {
     s1 = 0;
-    m2++;
-  }
+    m2++;}
+  
+  // Minutes increment
   if (m2 == 10) {               // Minutes increment
     m2 = 0;
-    m1++;
-  }
+    m1++;}
   if (m1 == 6) {
     m1 = 0;
-    h2++;
-  }
-  // Hours increment 12-hour format
+    h2++;}
+  
+  // Hours increment
   if ((h1 == 1 && h2 == 3) || (h1 == 0 && h2 == 10)) {
     h1 = (h1 == 1) ? 0 : 1;
     h2 = (h1 == 0) ? 1 : 0;
@@ -119,9 +112,15 @@ void toggleMode() {
   }
 }
 
+// Will alternate between digit and ' ' to simulate blinking
+// is used in wdt_handler.c
 void blinkDigit() {
-  if (currentMode == 1) { // Only blink in Edit mode
-    if (blinkFlag) { // Hide the current digit
+  
+  // Only blink on Edit mode
+  if (currentMode == 1) {
+    
+    // Hide current digits
+    if (blinkFlag) {
       switch (editDigit) {
       case 0: drawChar11x16(24, 50, ' ', fontColor, bgColor); break; // Clear h1
       case 1: drawChar11x16(36, 50, ' ', fontColor, bgColor); break; // Clear h2
@@ -130,7 +129,9 @@ void blinkDigit() {
       case 4: drawChar11x16(96, 50, ' ', fontColor, bgColor); break; // Clear s1
       case 5: drawChar11x16(108, 50, ' ', fontColor, bgColor); break; // Clear s2
       }
-    } else { // Redraw the digit
+      
+      // Unhide digits
+    } else {
       switch (editDigit) {
       case 0: drawChar11x16(24, 50, '0' + h1, fontColor, bgColor); break;
       case 1: drawChar11x16(36, 50, '0' + h2, fontColor, bgColor); break;
@@ -138,11 +139,10 @@ void blinkDigit() {
       case 3: drawChar11x16(72, 50, '0' + m2, fontColor, bgColor); break;
       case 4: drawChar11x16(96, 50, '0' + s1, fontColor, bgColor); break;
       case 5: drawChar11x16(108, 50, '0' + s2, fontColor, bgColor); break;
-      }
-    }
-  }
-}
+      }}}}
 
+// Will switch the current digit thats being modified
+// new modified digit will be blinkin
 void changeBlinkDigit() {
   switch (editDigit) {
   case 0: drawChar11x16(24, 50, '0' + h1, fontColor, bgColor); break;
@@ -152,30 +152,21 @@ void changeBlinkDigit() {
   case 4: drawChar11x16(96, 50, '0' + s1, fontColor, bgColor); break;
   case 5: drawChar11x16(108, 50, '0' + s2, fontColor, bgColor); break;
   }
-  editDigit = (editDigit + 1) % 6; // Cycle through 0 to 5
-  redrawScreen = 1; // Trigger a redraw
+  
+  // Force a redraw and only between the 6b digits
+  editDigit = (editDigit + 1) % 6;
+  redrawScreen = 1;
 }
 
+// Will inceremnt internal value of h1, h2, ... etc
 void incrementEditDigit() {
   switch (editDigit) {
-  case 0: // h1 (tens place of hours)
-    h1 = (h1 == 1) ? 0 : h1 + 1; // Wrap between 0 and 1
-    break;
-  case 1: // h2 (ones place of hours)
-    h2 = (h1 == 1 && h2 == 2) ? 0 : h2 + 1; // Wrap at 12
-    break;
-  case 2: // m1 (tens place of minutes)
-    m1 = (m1 == 5) ? 0 : m1 + 1; // Wrap at 5
-    break;
-  case 3: // m2 (ones place of minutes)
-    m2 = (m2 == 9) ? 0 : m2 + 1; // Wrap at 9
-    break;
-  case 4: // s1 (tens place of seconds)
-    s1 = (s1 == 5) ? 0 : s1 + 1; // Wrap at 5
-    break;
-  case 5: // s2 (ones place of seconds)
-    s2 = (s2 == 9) ? 0 : s2 + 1; // Wrap at 9
-    break;
+  case 0: h1 = (h1 == 1) ? 0 : h1 + 1; break;
+  case 1: h2 = (h1 == 1 && h2 == 2) ? 0 : h2 + 1; break;
+  case 2: m1 = (m1 == 5) ? 0 : m1 + 1; break;
+  case 3: m2 = (m2 == 9) ? 0 : m2 + 1; break;
+  case 4: s1 = (s1 == 5) ? 0 : s1 + 1; break;
+  case 5: s2 = (s2 == 9) ? 0 : s2 + 1; break;
   }
   redrawScreen = 1;
 }
@@ -183,33 +174,35 @@ void incrementEditDigit() {
 
 int main() {
   WDTCTL = WDTPW | WDTHOLD;  // Stop watchdog timer
-
-  configureClocks();
+  configureClocks();         // Initialize everything
   lcd_init();
-  switch_init();             // Initialize switches
+  switch_init();             
   buzzer_init();
   init_leds();
   drawUI(fontColor, bgColor); // Draw initial UI
-  enableWDTInterrupts();
-  __enable_interrupt();      // Enable global interrupts
+  enableWDTInterrupts();      // Enable interrupts
+  __enable_interrupt();
   while (1) {
-    // Prioritize time redraw
+    // Redraw time
     if (redrawScreen) {
-      redrawScreen = 0; // Clear the flag
+      redrawScreen = 0;               // Clear the flag
       updateTime(fontColor, bgColor); // Redraw only the time
     }
-    if (switches & SW1) {  // S1: Green LED on
+    
+    // S1 pressed
+    // Will go into Edit mode if in Display mode, and vice versa
+    if (switches & SW1) {
       toggleMode();
-      // turn_on_green_led();
       buzzer_set_period(1450);
       __delay_cycles(250000);
       buzzer_off();
-      drawString8x12(5, 120, "S1 pressed", fontColor, bgColor); // Update button status
-      switches &= ~SW1; // Clear S1 bit
+      drawString8x12(5, 120, "S1 pressed", fontColor, bgColor);
+      switches &= ~SW1;
     }
-    if (switches & SW2) {  // S2: Red LED on
-      //      turn_on_red_led();
-      // Beep briefly
+
+    // S2 pressed
+    // If in edit mode, it will change position of digit being edited
+    if (switches & SW2) {
       buzzer_set_period(1300);
       __delay_cycles(250000);
       buzzer_off();
@@ -218,33 +211,22 @@ int main() {
       drawString8x12(5, 120, "S2 pressed", fontColor, bgColor);
       switches &= ~SW2; // Clear S2 bit
     }
-    if (switches & SW3) {  // S3: Both LEDs on
-      //turn_on_green_led();
-      // turn_on_red_led();
+
+    // S3 pressed
+    // If in edit mode, it will increment the value of the edited digit by one
+    if (switches & SW3) {
       buzzer_set_period(1150);
       __delay_cycles(250000);
       buzzer_off();
-      if (currentMode == 1) { // Only active in Edit mode
-	switch (editDigit) {
-	case 0: h1 = (h1 + 1) % 2; break; // Toggle between 0-1
-	case 1:
-	  h2 = (h2 + 1) % 10;
-	  if (h1 == 1 && h2 > 2) h2 = 0; // Limit hours to 12
-	  break;
-	case 2: m1 = (m1 + 1) % 6; break; // 0-5 for minutes tens
-	case 3: m2 = (m2 + 1) % 10; break; // 0-9 for minutes ones
-	case 4: s1 = (s1 + 1) % 6; break; // 0-5 for seconds tens
-	case 5: s2 = (s2 + 1) % 10; break; // 0-9 for seconds ones
-	}
-	redrawScreen = 1; // Update the display
-      }
-      drawString8x12(5, 120, "S3 pressed", fontColor, bgColor); // Update button status
-      switches &= ~SW3; // Clear S3 bit
+      incrementEditDigit();
+      redrawScreen = 1;
+      drawString8x12(5, 120, "S3 pressed", fontColor, bgColor);
+      switches &= ~SW3;
     }
-    if (switches & SW4) {  // S4: Both LEDs off
-      //turn_off_green_led();
-      //turn_off_red_led();
-      //      drawString8x12(5,120, "S4", fontColor, bgColor);
+
+    // S4 is pressed
+    // WIll invert the colors of the screen
+    if (switches & SW4) {
       u_int temp = bgColor;
       bgColor = fontColor;
       fontColor = temp;
@@ -254,11 +236,10 @@ int main() {
       drawUI(fontColor, bgColor);
       daytime_toggle();
       drawString8x12(5, 120, "S4 pressed", fontColor, bgColor);
-      //      __delay_cycles(250000); // Short delay (~250ms at 1 MHz clock)
-      buzzer_off();           // Turn off the buzzer
-      switches &= ~SW4; // Clear S4 bit
+      buzzer_off();
+      switches &= ~SW4;
     }
-    __bis_SR_register(LPM0_bits + GIE); // Enter low-power mode with interrupts enabled
+    __bis_SR_register(LPM0_bits + GIE);
     
   }
   return 0;
