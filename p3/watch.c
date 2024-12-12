@@ -15,6 +15,7 @@ unsigned int h1 = 1, h2 = 2;      // Hour digits 1 and 2 (HH:MM:SS format)
 unsigned int m1 = 0, m2 = 0;      // Minute digits
 unsigned int s1 = 0, s2 = 0;      // Second digits
 char currentMode = 0;             // 0 for Display mode, 1 for Edit mode
+char blinkFlag = 0;               // Blink flag for current edit digit
 
 void drawUI(u_int fontColor, u_int bgColor) {
   //Clear screen and create graphical UI
@@ -55,11 +56,16 @@ void modeBuzz(){
 }
 
 void updateTime(u_int fontColor, u_int bgColor) {
-  // Clear the area where the time is displayed
-  //  fillRectangle(24, 50, 120, 16, bgColor);
+  if (currentMode == 1 && !blinkFlag) {
+    // Hide h1 by drawing it in the background color
+    drawChar11x16(24, 50, ' ', bgColor, bgColor);
+  } else {
+    // Draw h1 normally
+    drawChar11x16(24, 50, '0' + h1, fontColor, bgColor);
+  }
 
   // Redraw each digit in its respective place
-  drawChar11x16(24, 50, '0' + h1, fontColor, bgColor); // Hour tens place
+  // drawChar11x16(24, 50, '0' + h1, fontColor, bgColor); // Hour tens place
   drawChar11x16(36, 50, '0' + h2, fontColor, bgColor); // Hour ones place
   drawChar11x16(48, 50, ':', fontColor, bgColor);      // Separator
   drawChar11x16(60, 50, '0' + m1, fontColor, bgColor); // Minute tens place

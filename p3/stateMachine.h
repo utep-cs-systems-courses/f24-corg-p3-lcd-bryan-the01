@@ -3,5 +3,7 @@
 
 void state_advance();
 extern volatile short redrawScreen;
+extern char blinkFlag;
+extern char currentMode;
 
 #endif // STATEMACHINE_H
