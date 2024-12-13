@@ -160,15 +160,17 @@ void changeBlinkDigit() {
 
 // Will inceremnt internal value of h1, h2, ... etc
 void incrementEditDigit() {
-  switch (editDigit) {
-  case 0: h1 = (h1 == 1) ? 0 : h1 + 1; break;
-  case 1: h2 = (h1 == 1 && h2 == 2) ? 0 : h2 + 1; break;
-  case 2: m1 = (m1 == 5) ? 0 : m1 + 1; break;
-  case 3: m2 = (m2 == 9) ? 0 : m2 + 1; break;
-  case 4: s1 = (s1 == 5) ? 0 : s1 + 1; break;
-  case 5: s2 = (s2 == 9) ? 0 : s2 + 1; break;
+  if (currentMode == 1){
+    switch (editDigit) {
+    case 0: h1 = (h1 == 1) ? 0 : h1 + 1; break;
+    case 1: h2 = (h1 == 1 && h2 == 2) ? 0 : h2 + 1; break;
+    case 2: m1 = (m1 == 5) ? 0 : m1 + 1; break;
+    case 3: m2 = (m2 == 9) ? 0 : m2 + 1; break;
+    case 4: s1 = (s1 == 5) ? 0 : s1 + 1; break;
+    case 5: s2 = (s2 == 9) ? 0 : s2 + 1; break;
+    }
+    redrawScreen = 1;
   }
-  redrawScreen = 1;
 }
 
 
